@@ -27,6 +27,19 @@ struct asset_header_t {
 #endif
 };
 
+typedef enum asset_job_category_ {
+	asset_job_category_io,
+	asset_job_category_cpu,
+	asset_job_category_gpu,
+} asset_job_category_;
+
+typedef struct asset_job_t {
+	asset_job_category_ category;
+	bool                blocking;
+	void               *data;
+	bool              (*job_callback)(void *data);
+} asset_job_t;
+
 void       *assets_find          (const char *id, asset_type_ type);
 void       *assets_find          (uint64_t    id, asset_type_ type);
 void       *assets_allocate      (asset_type_ type);
@@ -41,5 +54,7 @@ const char *assets_file          (const char *file_name);
 bool        assets_init          ();
 void        assets_update        ();
 void        assets_shutdown      ();
+
+void        assets_add_job(asset_job_t job);
 
 } // namespace sk

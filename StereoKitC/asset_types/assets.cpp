@@ -23,9 +23,26 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+typedef struct asset_thread_t {
+	asset_job_category_  category;
+	array_t<asset_job_t> jobs;
+	mtx_t                job_mtx;
+	thrd_t               thread;
+	bool32_t             run;
+	bool32_t             running;
+} asset_thread_t;
+
+///////////////////////////////////////////
+
 array_t<asset_header_t *> assets = {};
 array_t<asset_header_t *> assets_multithread_destroy = {};
 mtx_t                     assets_multithread_destroy_lock;
+asset_thread_t            asset_threads[3] = {};
+const asset_job_category_ asset_blocking_thread = asset_job_category_gpu;
+
+///////////////////////////////////////////
+
+int32_t assets_thread(void *arg);
 
 ///////////////////////////////////////////
 
@@ -247,6 +264,22 @@ const char *assets_file(const char *file_name) {
 
 bool assets_init() {
 	mtx_init(&assets_multithread_destroy_lock, mtx_plain);
+
+	asset_threads[asset_job_category_io].category = asset_job_category_io;
+	asset_threads[asset_job_category_io].run      = true;
+	mtx_init   (&asset_threads[asset_job_category_io].job_mtx, mtx_plain);
+	thrd_create(&asset_threads[asset_job_category_io].thread,  assets_thread, &asset_threads[asset_job_category_io]);
+
+	asset_threads[asset_job_category_cpu].category = asset_job_category_cpu;
+	asset_threads[asset_job_category_cpu].run      = true;
+	mtx_init   (&asset_threads[asset_job_category_cpu].job_mtx, mtx_plain);
+	thrd_create(&asset_threads[asset_job_category_cpu].thread,  assets_thread, &asset_threads[asset_job_category_cpu]);
+
+
+	asset_threads[asset_job_category_gpu].category = asset_job_category_gpu;
+	asset_threads[asset_job_category_gpu].run      = true;
+	mtx_init(&asset_threads[asset_job_category_gpu].job_mtx, mtx_plain);
+
 	return true;
 }
 
@@ -259,13 +292,77 @@ void assets_update() {
 	}
 	assets_multithread_destroy.free();
 	mtx_unlock(&assets_multithread_destroy_lock);
+
+	// Execute GPU category (and blocking) tasks on the main thread
+	const asset_job_category_ cat = asset_job_category_gpu;
+	for (size_t i = 0; i < asset_threads[cat].jobs.count; i++) {
+		asset_threads[cat].jobs[i].job_callback(asset_threads[cat].jobs[i].data);
+	}
+	mtx_lock(&asset_threads[cat].job_mtx);
+	asset_threads[cat].jobs.clear();
+	mtx_unlock(&asset_threads[cat].job_mtx);
 }
 
 ///////////////////////////////////////////
 
 void assets_shutdown() {
+	for (size_t i = 0; i < _countof(asset_threads); i++) {
+		asset_threads[i].run = false;
+		if (i != asset_blocking_thread)
+			thrd_detach(&asset_threads[i].thread);
+	}
+
+	// Wait until asset threads have finished
+	while (true) {
+		bool running = false;
+		for (size_t i = 0; i < _countof(asset_threads); i++) {
+			running = running || asset_threads[i].running;
+		}
+		if (!running) break;
+		thrd_yield();
+	}
+
 	assets_multithread_destroy.free();
 	mtx_destroy(&assets_multithread_destroy_lock);
+}
+
+///////////////////////////////////////////
+///////////////////////////////////////////
+///////////////////////////////////////////
+
+void assets_add_job(asset_job_t job) {
+	asset_job_category_ category = job.category;
+	if (job.blocking) category = asset_blocking_thread;
+	if (!asset_threads[job.category].run)
+		return;
+
+	mtx_lock(&asset_threads[job.category].job_mtx);
+	asset_threads[job.category].jobs.add(job);
+	mtx_unlock(&asset_threads[job.category].job_mtx);
+}
+
+///////////////////////////////////////////
+
+int32_t assets_thread(void *arg) {
+	asset_thread_t *data = (asset_thread_t*)arg;
+	data->running = true;
+
+	while (data->run) {
+		if (data->jobs.count != 0) {
+			mtx_lock(&data->job_mtx);
+			asset_job_t job = data->jobs[0];
+			data->jobs.remove(0);
+			mtx_unlock(&data->job_mtx);
+
+			job.job_callback(job.data);
+		}
+		thrd_yield();
+	}
+
+	data->jobs.free();
+	mtx_destroy(&data->job_mtx);
+	data->running = false;
+	return 1;
 }
 
 } // namespace sk
