@@ -332,7 +332,15 @@ void assets_shutdown() {
 
 void assets_add_job(asset_job_t job) {
 	asset_job_category_ category = job.category;
-	if (job.blocking) category = asset_blocking_thread;
+	if (job.blocking) {
+		category = asset_blocking_thread;
+
+		// If we're on the blocking thread already, then block away!
+		if (asset_threads[asset_blocking_thread].run && thrd_equal(asset_threads[asset_blocking_thread].thread, thrd_current)) {
+			job.job_callback(job.data);
+			return;
+		}
+	}
 	if (!asset_threads[job.category].run)
 		return;
 

@@ -17,13 +17,22 @@ enum asset_type_ {
 	asset_type_solid,
 };
 
+enum asset_state_ {
+	asset_state_none,
+	asset_state_error,
+	asset_state_loading,
+	asset_state_ready,
+	asset_state_complete,
+};
+
 struct asset_header_t {
-	asset_type_ type;
-	uint64_t    id;
-	int32_t     refs;
-	uint64_t    index;
+	asset_type_  type;
+	asset_state_ state;
+	uint64_t     id;
+	int32_t      refs;
+	uint64_t     index;
 #if defined(SK_DEBUG)
-	char       *id_text;
+	char        *id_text;
 #endif
 };
 

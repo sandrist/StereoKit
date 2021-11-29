@@ -9,6 +9,7 @@ namespace sk {
 
 struct _tex_t {
 	asset_header_t header;
+	tex_t          fallback;
 	tex_format_    format;
 	tex_type_      type;
 	tex_sample_    sample_mode;
