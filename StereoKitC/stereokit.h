@@ -1723,6 +1723,7 @@ SK_API const controller_t   *input_controller     (handed_ hand);
 SK_API button_state_         input_controller_menu();
 SK_API const pose_t         *input_head           ();
 SK_API const pose_t         *input_eyes           ();
+SK_API int64_t               input_eyes_time();
 SK_API button_state_         input_eyes_tracked   ();
 SK_API const mouse_t        *input_mouse          ();
 SK_API button_state_         input_key            (key_ key);
