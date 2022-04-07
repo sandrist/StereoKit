@@ -441,7 +441,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_mouse        ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_head         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_eyes         ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern long     input_eyes_time    ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_eyes_tracked ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_key          (Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint     input_text_consume ();
