@@ -37,8 +37,27 @@ typedef enum ui_vis_ {
 	ui_vis_window_body_only,
 	ui_vis_window_head,
 	ui_vis_window_head_only,
+	ui_vis_separator,
+	ui_vis_slider_line,
+	ui_vis_slider_push,
+	ui_vis_slider_pinch,
 	ui_vis_max,
 } ui_vis_;
+
+typedef enum ui_color_ {
+	ui_color_primary = 0,
+	ui_color_background,
+	ui_color_common,
+	ui_color_complement,
+	ui_color_text,
+	ui_color_max,
+} ui_color_;
+
+typedef enum ui_pad_ {
+	ui_pad_none,
+	ui_pad_inside,
+	ui_pad_outside,
+} ui_pad_;
 
 typedef struct ui_settings_t {
 	float padding;
@@ -55,6 +74,8 @@ SK_API void     ui_enable_far_interact (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled();
 SK_API void     ui_settings            (ui_settings_t settings);
 SK_API void     ui_set_color           (color128      color);
+SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gamma);
+SK_API color128 ui_get_theme_color     (ui_color_ color_type);
 SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr));
 
 SK_API void     ui_push_text_style       (text_style_t  style);
@@ -138,6 +159,10 @@ SK_API void     ui_handle_end     ();
 SK_API void     ui_window_begin   (const char     *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
 SK_API void     ui_window_begin_16(const char16_t *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
 SK_API void     ui_window_end     ();
+
+SK_API void     ui_panel_at       (vec3 start, vec2 size, ui_pad_ padding sk_default(ui_pad_outside));
+SK_API void     ui_panel_begin    (ui_pad_ padding sk_default(ui_pad_outside));
+SK_API void     ui_panel_end      ();
 
 #ifdef __cplusplus
 } // namespace sk

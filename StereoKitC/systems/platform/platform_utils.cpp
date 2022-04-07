@@ -142,7 +142,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	// Linux thinks folders are files, but then fails in a bad way when
 	// treating them like files.
 	struct stat buffer;
-	if (stat(filename, &buffer) != 0 || (S_ISDIR(buffer.st_mode))) {
+	if (stat(filename, &buffer) == 0 && (S_ISDIR(buffer.st_mode))) {
 		log_diagf("platform_read_file can't read folders: %s", filename);
 		return false;
 	}
@@ -683,7 +683,7 @@ wchar_t *platform_to_wchar(const char *utf8_string) {
 }
 
 char *platform_from_wchar(const wchar_t *string) {
-	int     len  = wcslen(string)+1;
+	int32_t len  = (int)(wcslen(string)+1);
 	int32_t size = WideCharToMultiByte(CP_UTF8, 0, string, len, nullptr, 0, nullptr, nullptr);
 	char *result = sk_malloc_t(char, size);
 	WideCharToMultiByte               (CP_UTF8, 0, string, len, result, size, nullptr, nullptr);

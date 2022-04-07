@@ -16,6 +16,7 @@
 #include "../../libraries/stref.h"
 #include "../../libraries/ferr_hash.h"
 #include "../render.h"
+#include "../audio.h"
 #include "../input.h"
 #include "../hand/input_hand.h"
 #include "android.h"
@@ -100,7 +101,8 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 	if (!xr_stage_space) return false;
 
 	XrExtent2Df bounds;
-	if (XR_FAILED(xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds)))
+	XrResult res = xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
+	if (XR_FAILED(res) || res == XR_SPACE_BOUNDS_UNAVAILABLE)
 		return false;
 	if (!openxr_get_space(xr_stage_space, out_pose, time))
 		return false;
@@ -496,6 +498,18 @@ bool openxr_init() {
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	if (xr_ext_available.OCULUS_audio_device_guid) {
+		wchar_t device_guid[128];
+		if (XR_SUCCEEDED(xr_extensions.xrGetAudioOutputDeviceGuidOculus(xr_instance, device_guid))) {
+			audio_set_default_device_out(device_guid);
+		}
+		if (XR_SUCCEEDED(xr_extensions.xrGetAudioInputDeviceGuidOculus(xr_instance, device_guid))) {
+			audio_set_default_device_in(device_guid);
+		}
+	}
+#endif
+
 	return true;
 }
 
@@ -606,6 +620,7 @@ void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 
+	xr_compositor_layers_clear();
 	render_clear();
 }
 
@@ -619,7 +634,10 @@ void openxr_poll_events() {
 		case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
 			XrEventDataSessionStateChanged *changed = (XrEventDataSessionStateChanged*)&event_buffer;
 			xr_session_state = changed->state;
-			sk_focused       = xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED;
+
+			if      (xr_session_state == XR_SESSION_STATE_FOCUSED) sk_focus = app_focus_active;
+			else if (xr_session_state == XR_SESSION_STATE_VISIBLE) sk_focus = app_focus_background;
+			else                                                   sk_focus = app_focus_hidden;
 
 			// Session state change is where we can begin and end sessions, as well as find quit messages!
 			switch (xr_session_state) {
@@ -950,67 +968,4 @@ void backend_openxr_ext_request(const char *extension_name) {
 
 } // namespace sk
 
-#else
-
-namespace sk {
-
-///////////////////////////////////////////
-
-openxr_handle_t backend_openxr_get_instance() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-openxr_handle_t backend_openxr_get_session() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-openxr_handle_t backend_openxr_get_space() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-int64_t backend_openxr_get_time() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-int64_t backend_openxr_get_eyes_sample_time() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-void *backend_openxr_get_function(const char *function_name) {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return nullptr;
-}
-
-///////////////////////////////////////////
-
-bool32_t backend_openxr_ext_enabled(const char *extension_name) {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return false;
-}
-
-///////////////////////////////////////////
-
-void backend_openxr_ext_request(const char *extension_name) {
-	if (sk_initialized) {
-		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
-		return;
-	}
-}
-
-}
 #endif

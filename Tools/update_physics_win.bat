@@ -1,5 +1,7 @@
 git clone https://github.com/DanielChappuis/reactphysics3d.git
 cd reactphysics3d/
+:: v0.9.0
+git checkout 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1
 
 :: Replace the include files
 rmdir /S /Q "../../StereoKitC/lib/include/reactphysics3d"

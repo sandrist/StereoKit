@@ -144,6 +144,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="asset_types\sound.cpp" />
     <ClCompile Include="asset_types\sprite.cpp" />
     <ClCompile Include="asset_types\texture.cpp" />
+    <ClCompile Include="backend.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="hierarchy.cpp" />
     <ClCompile Include="intersect.cpp" />
@@ -162,7 +163,6 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="sk_memory.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
-    <ClCompile Include="stereokit_ui.cpp" />
     <ClCompile Include="systems\audio.cpp" />
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\hand\hand_mouse.cpp" />
@@ -193,6 +193,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="systems\world.cpp" />
     <ClCompile Include="tools\file_picker.cpp" />
     <ClCompile Include="tools\virtual_keyboard.cpp" />
+    <ClCompile Include="ui\stereokit_ui.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\animation.h" />
@@ -302,6 +303,9 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <None Include="shaders_builtin\shader_builtin_pbr_clip.hlsl">
       <FileType>Document</FileType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="debugger_vis.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

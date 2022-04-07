@@ -31,13 +31,13 @@ namespace StereoKit
 		static extern IntPtr LoadLibraryW(string fileName);
 		static bool LoadWindows(string arch)
 		{
-			if (LoadLibraryW("StereoKitC") != IntPtr.Zero) return true;
 			if (LoadLibraryW($"runtimes/win-{arch}/native/StereoKitC.dll") != IntPtr.Zero) return true;
+			if (LoadLibraryW("StereoKitC") != IntPtr.Zero) return true;
 			return false;
 		}
 
 
-		[DllImport("libdl", CharSet = CharSet.Ansi)]
+		[DllImport("dl", CharSet = CharSet.Ansi)]
 		static extern IntPtr dlopen(string fileName, int flags);
 		static bool LoadUnix(string arch)
 		{

@@ -4,7 +4,7 @@ using System.Text;
 namespace StereoKit
 {
 	/// <summary>This class is a collection of user interface and interaction
-	/// methods! StereoKit uses an Immediate Mode gui system, which can be very
+	/// methods! StereoKit uses an Immediate Mode GUI system, which can be very
 	/// easy to work with and modify during runtime.
 	/// 
 	/// You must call the UI method every frame you wish it to be available,
@@ -92,6 +92,9 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.ui_is_interacting(hand);
 
+		public static void SetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_set_theme_color(colorType, colorGamma);
+		public static Color GetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_get_theme_color(colorType);
+
 		/// <summary>This will push a surface into SK's UI layout system. The
 		/// surface becomes part of the transform hierarchy, and SK creates a
 		/// layout surface for UI content to be placed on and interacted with.
@@ -151,7 +154,7 @@ namespace StereoKit
 		public static bool VolumeAt(string id, Bounds bounds)
 			=> NativeAPI.ui_volume_at_16(id, bounds);
 
-		/// /// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
+		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="hand">This will be the last unpreoccupied hand found
 		/// inside the volume, and is the hand controlling the interaction.
 		/// </param>
@@ -242,7 +245,7 @@ namespace StereoKit
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
 		/// <param name="textAlign">Where should the text position itself
-		/// within its bounds? TextAlign.TopLeft is how most english text is
+		/// within its bounds? TextAlign.TopLeft is how most English text is
 		/// aligned.</param>
 		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
 			=> NativeAPI.ui_text_16(text, textAlign);
@@ -426,7 +429,7 @@ namespace StereoKit
 		/// <param name="size">Size of the Input in Hierarchy local meters.
 		/// Zero axes will auto-size.</param>
 		/// <param name="type">
-		/// Specify what type of text field this is if string or number field. This dose not limmet what can be typed it is just so it knows what keyboard to use
+		/// Specify what type of text field this is if string or number field. This does not limit what can be typed it is just so it knows what keyboard to use
 		/// </param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
@@ -697,7 +700,7 @@ namespace StereoKit
 		/// true. This currently doesn't have any visual effect, so you may
 		/// wish to pair it with a PushTint.</summary>
 		/// <param name="enabled">Should the following elements be enabled and
-		/// interactible?</param>
+		/// interactable?</param>
 		public static void PushEnabled(bool enabled)
 			=> NativeAPI.ui_push_enabled(enabled?1:0);
 
@@ -705,6 +708,26 @@ namespace StereoKit
 		/// was below will then be used as the primary enabled state.</summary>
 		public static void PopEnabled()
 			=> NativeAPI.ui_pop_enabled();
+
+		/// <summary>If you wish to manually draw a Panel, this function will
+		/// let you draw one wherever you want!</summary>
+		/// <param name="start">The top left corner of the Panel element.</param>
+		/// <param name="size">The size of the Panel element, in hierarchy
+		/// local meters.</param>
+		/// <param name="padding">Only UIPad.Outsize has any affect here.
+		/// UIPad.Inside will behave the same as UIPad.None.</param>
+		public static void PanelAt(Vec3 start, Vec2 size, UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_at(start, size, padding);
+
+		/// <summary>This will begin a Panel element that will encompass all 
+		/// elements drawn between PanelBegin and PanelEnd. This is an entirely
+		/// visual element, and is great for visually grouping elements
+		/// together. Every Begin must have a matching End.</summary>
+		/// <param name="padding">Describes how padding is applied to the
+		/// visual element of the Panel.</param>
+		public static void PanelBegin(UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_begin(padding);
+		
+		/// <summary>This will finalize and draw a Panel element.</summary>
+		public static void PanelEnd() => NativeAPI.ui_panel_end();
 
 		/// <summary>Override the visual assets attached to a particular UI
 		/// element. 

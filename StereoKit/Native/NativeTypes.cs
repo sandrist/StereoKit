@@ -14,7 +14,7 @@ namespace StereoKit
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
 		public DisplayMode  displayPreference;
-		/// <summary>What type of backgroud blend mode do we prefer for this
+		/// <summary>What type of background blend mode do we prefer for this
 		/// application? Are you trying to build an Opaque/Immersive/VR app,
 		/// or would you like the display to be AnyTransparent, so the world 
 		/// will show up behind your content, if that's an option? Note that
@@ -61,7 +61,7 @@ namespace StereoKit
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
-		/// so developers can test MR spaces without being in a headeset. If
+		/// so developers can test MR spaces without being in a headset. If
 		/// You don't want this, you can disable it with this setting!</summary>
 		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
 		private int _disableFlatscreenMRSim;
@@ -317,7 +317,7 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Pointer
 	{
-		/// <summary>What input soure did this pointer come from? This is
+		/// <summary>What input source did this pointer come from? This is
 		/// a bit-flag that contains input family and capability
 		/// information.</summary>
 		public InputSource source;
@@ -359,6 +359,9 @@ namespace StereoKit
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
@@ -429,7 +432,7 @@ namespace StereoKit
 		/// grabbed.</summary>
 		Normal = Head | Body,
 		/// <summary>No body, no head. Not really a flag, just set to this
-		/// value. The Window will still be grab/moveable. To prevent it from
+		/// value. The Window will still be grab/movable. To prevent it from
 		/// being grabbable, combine with the UIMove.None option, or switch
 		/// to UI.Push/PopSurface.</summary>
 		Empty = 0,
@@ -465,7 +468,7 @@ namespace StereoKit
 	public enum UIVisual
 	{
 		/// <summary>Default state, no UI element at all.</summary>
-		None,
+		None = 0,
 		/// <summary>A default root UI element. Not a particular element, but
 		/// other elements may refer to this if there is nothing more specific
 		/// present.</summary>
@@ -492,5 +495,44 @@ namespace StereoKit
 		/// is used when a Window only has the head panel, without a body.
 		/// </summary>
 		WindowHeadOnly,
+		/// <summary>Refers to UI.HSeparator element.</summary>
+		Separator,
+		/// <summary>Refers to the back line component of the UI.HSlider
+		/// element.</summary>
+		SliderLine,
+		/// <summary>Refers to the push button component of the UI.HSlider
+		/// element when using UIConfirm.Push.</summary>
+		SliderPush,
+		/// <summary>Refers to the pinch button component of the UI.HSlider
+		/// element when using UIConfirm.Pinch.</summary>
+		SliderPinch,
+		Max,
+	}
+
+	public enum UIColor
+	{
+		Primary = 0,
+		Background,
+		Common,
+		Complement,
+		Text,
+		Max,
+	}
+
+	/// <summary>This specifies a particular padding mode for certain UI
+	/// elements, such as the UI.Panel! This describes where padding is applied
+	/// and how it affects the layout of elements.</summary>
+	public enum UIPad
+	{
+		/// <summary>No padding, this matches the element's layout bounds
+		/// exactly!</summary>
+		None,
+		/// <summary>This applies padding inside the element's layout bounds,
+		/// and will inflate the layout bounds to fit the extra padding.</summary>
+		Inside,
+		/// <summary>This will apply the padding outside of the layout bounds!
+		/// This will maintain the size and position of the layout volume, but
+		/// the visual padding will go outside of the volume.</summary>
+		Outside
 	}
 }

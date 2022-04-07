@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(StereoKit VERSION "0.3.5" LANGUAGES CXX C)
+project(StereoKit VERSION "0.3.6" LANGUAGES CXX C)
 
 # Default build configuration to RelWithDebInfo 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
@@ -58,7 +58,7 @@ endif()
 CPMAddPackage(
   NAME reactphysics3d
   GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-  GIT_TAG bdc3153f552f6665ea9d2d13afd20ea871119e17 # v0.8.0
+  GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1 # v0.9.0
   EXCLUDE_FROM_ALL YES
 )
 # Something in reactphysics3d seems to require -fPIC
@@ -71,9 +71,9 @@ target_compile_options(reactphysics3d PRIVATE
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
-  VERSION 1.0.17
+  VERSION 1.0.22
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
+  GIT_TAG 458984d7f59d1ae6dc1b597d94b02e4f7132eaba # v1.0.22
 )
 
 ###########################################
@@ -147,11 +147,11 @@ endif()
 
 set(SK_SRC_CODE
   StereoKitC/stereokit.h
-  StereoKitC/stereokit_ui.h
 
   StereoKitC/_stereokit.h
   StereoKitC/_stereokit_ui.h
   StereoKitC/color.cpp
+  StereoKitC/backend.cpp
   StereoKitC/hierarchy.h
   StereoKitC/hierarchy.cpp
   StereoKitC/intersect.cpp
@@ -165,8 +165,7 @@ set(SK_SRC_CODE
   StereoKitC/sk_memory.cpp
   StereoKitC/spherical_harmonics.h
   StereoKitC/spherical_harmonics.cpp
-  StereoKitC/stereokit.cpp
-  StereoKitC/stereokit_ui.cpp )
+  StereoKitC/stereokit.cpp )
 
 set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/assets.h
@@ -291,6 +290,10 @@ set(SK_SRC_TOOLS
   StereoKitC/tools/file_picker.h
   StereoKitC/tools/file_picker.cpp )
 
+set(SK_SRC_UI
+  StereoKitC/stereokit_ui.h
+  StereoKitC/ui/stereokit_ui.cpp )
+
 # Switch between a static or shared library based on
 # the cmake options provided.
 if (SK_BUILD_SHARED_LIBS)
@@ -307,6 +310,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_HANDS}
   ${SK_SRC_PLATFORM}
   ${SK_SRC_TOOLS}
+  ${SK_SRC_UI}
   ${SK_SRC_SHADERS_H} )
 
 # Set up Visual Studio folders/filters for a more organized
@@ -318,6 +322,7 @@ source_group("systems"     FILES ${SK_SRC_SYSTEMS})
 source_group("hands"       FILES ${SK_SRC_HANDS})
 source_group("platform"    FILES ${SK_SRC_PLATFORM})
 source_group("tools"       FILES ${SK_SRC_TOOLS})
+source_group("ui"          FILES ${SK_SRC_UI})
 
 if (UNIX)
   # DirectXMath on Linux needs a few extra files
@@ -351,6 +356,8 @@ target_link_libraries( StereoKitC
 if (SK_BUILD_TESTS)
   add_executable( StereoKitCTest
     Examples/StereoKitCTest/main.cpp
+    Examples/StereoKitCTest/demo_envmap.h
+    Examples/StereoKitCTest/demo_envmap.cpp
     Examples/StereoKitCTest/demo_draw.h
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_basics.h
@@ -365,6 +372,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/scene.cpp
     Examples/StereoKitCTest/demo_ui.h
     Examples/StereoKitCTest/demo_ui.cpp
+    Examples/StereoKitCTest/demo_ui_layout.h
+    Examples/StereoKitCTest/demo_ui_layout.cpp
     Examples/StereoKitCTest/demo_world.h
     Examples/StereoKitCTest/demo_world.cpp
     Examples/StereoKitCTest/demo_lines.h

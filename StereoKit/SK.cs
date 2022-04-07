@@ -10,7 +10,7 @@ namespace StereoKit
 	public static class SK
 	{
 		private static SystemInfo   _system;
-		private static Steppers     _steppers;
+		private static Steppers     _steppers         = new Steppers();
 		private static List<Action> _mainThreadInvoke = new List<Action>();
 
 		/// <summary>This is a copy of the settings that StereoKit was
@@ -28,7 +28,7 @@ namespace StereoKit
 		/// </summary>
 		public static DisplayMode ActiveDisplayMode => NativeAPI.sk_active_display_mode();
 		/// <summary>This structure contains information about the current 
-		/// system and its capabilites. There's a lot of different MR devices,
+		/// system and its capabilities. There's a lot of different MR devices,
 		/// so it's nice to have code for systems with particular 
 		/// characteristics!</summary>
 		public static SystemInfo System => _system;
@@ -40,6 +40,13 @@ namespace StereoKit
 		/// with this format: `0xMMMMiiiiPPPPrrrr` in order of 
 		/// Major.mInor.Patch.pre-Release</summary>
 		public static ulong VersionId => NativeAPI.sk_version_id();
+
+		/// <summary> This tells about the app's current focus state,
+		/// whether it's active and receiving input, or if it's
+		/// backgrounded or hidden. This can be important since apps may
+		/// still run and render when unfocused, as the app may still be
+		/// visible behind the app that _does_ have focus. </summary>
+		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
 
 		/// <summary>Initializes StereoKit window, default resources, systems,
 		/// etc.</summary>
@@ -88,7 +95,7 @@ namespace StereoKit
 				_system = NativeAPI.sk_system_info();
 				Default.Initialize();
 
-				_steppers = new Steppers();
+				_steppers.InitializeSteppers();
 			}
 
 			return result;
@@ -148,7 +155,7 @@ namespace StereoKit
 		/// execution completes, it properly calls the shutdown callback and
 		/// shuts down StereoKit for you.
 		/// 
-		/// Using this method is important for compatability with WASM and is
+		/// Using this method is important for compatibility with WASM and is
 		/// the preferred method of controlling the main loop, over 
 		/// `SK.Step`.</summary>
 		/// <param name="onStep">A callback where you put your application 
