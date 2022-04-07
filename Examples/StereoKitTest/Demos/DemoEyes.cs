@@ -21,7 +21,7 @@ class DemoEyes : ITest
 
 	public void Update()
 	{
-		var currentSampleTime = Input.EyesSampleTime;
+		var currentSampleTime = Backend.OpenXR.EyesSampleTime;
 
 		if (startTime == default)
         {

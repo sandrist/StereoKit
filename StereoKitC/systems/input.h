@@ -10,7 +10,6 @@ extern pose_t        input_head_pose_local;
 extern pose_t        input_eyes_pose_world;
 extern pose_t        input_eyes_pose_local;
 extern button_state_ input_eyes_track_state;
-extern int64_t       input_eyes_sample_time;
 extern controller_t  input_controllers[2];
 extern button_state_ input_controller_menubtn;
 

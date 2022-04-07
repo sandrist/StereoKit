@@ -315,10 +315,6 @@ namespace StereoKit
 		/// emulated using the cursor position when the user holds down Alt.
 		/// </summary>
 		public static Pose     Eyes        => Marshal.PtrToStructure<Pose>(NativeAPI.input_eyes());
-
-		/// <summary>Type: XrTime. This is the timestamp associated with the current eye pose.</summary>
-		public static long EyesSampleTime => NativeAPI.input_eyes_time();
-
 		/// <summary>If eye hardware is available and app has permission, 
 		/// then this is the tracking state of the eyes. Eyes may move out of
 		/// bounds, hardware may fail to detect eyes, or who knows what else!

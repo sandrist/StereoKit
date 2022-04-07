@@ -26,7 +26,6 @@ pose_t                input_head_pose_local  = { vec3_zero, quat_identity };
 pose_t                input_head_pose_world  = { vec3_zero, quat_identity };
 pose_t                input_eyes_pose_local  = { vec3_zero, quat_identity };
 pose_t                input_eyes_pose_world  = { vec3_zero, quat_identity };
-int64_t               input_eyes_sample_time = 0;
 button_state_         input_eyes_track_state = button_state_inactive;
 
 ///////////////////////////////////////////
@@ -151,12 +150,6 @@ const pose_t *input_head() {
 
 const pose_t *input_eyes() {
 	return &input_eyes_pose_world;
-}
-
-///////////////////////////////////////////
-
-int64_t input_eyes_time() {
-	return input_eyes_sample_time;
 }
 
 ///////////////////////////////////////////
