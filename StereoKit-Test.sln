@@ -1,0 +1,51 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32407.343
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{93E37CDE-B507-40F1-9F03-EFA53D58EB4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StereoKitTest_UWP", "Examples\StereoKitTest\StereoKitTest_UWP\StereoKitTest_UWP.csproj", "{6AAC0A23-0742-4689-B65D-0B2F5291FB39}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|ARM = Debug|ARM
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|ARM = Release|ARM
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|ARM.ActiveCfg = Debug|ARM
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|ARM.Build.0 = Debug|ARM
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|ARM.Deploy.0 = Debug|ARM
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|ARM64.Build.0 = Debug|ARM64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|x64.ActiveCfg = Debug|x64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|x64.Build.0 = Debug|x64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Debug|x64.Deploy.0 = Debug|x64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|Any CPU.ActiveCfg = Release|Win32
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|ARM.ActiveCfg = Release|ARM
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|ARM.Build.0 = Release|ARM
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|ARM.Deploy.0 = Release|ARM
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|ARM64.ActiveCfg = Release|ARM64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|ARM64.Build.0 = Release|ARM64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|ARM64.Deploy.0 = Release|ARM64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|x64.ActiveCfg = Release|x64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|x64.Build.0 = Release|x64
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|x64.Deploy.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6AAC0A23-0742-4689-B65D-0B2F5291FB39} = {93E37CDE-B507-40F1-9F03-EFA53D58EB4C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {900C22B3-9585-4C5A-9EF6-9A7142E38986}
+	EndGlobalSection
+EndGlobal
