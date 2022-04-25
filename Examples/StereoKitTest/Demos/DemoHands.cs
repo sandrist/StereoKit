@@ -268,28 +268,34 @@ class DemoHands : ITest
 
 	public static void DrawJoints(Mesh jointMesh, Material jointMaterial)
 	{
-		for (int i = 0; i < (int)Handed.Max; i++) {
-			Hand hand = Input.Hand((Handed)i);
+		void DrawHand(Hand hand)
+        {
 			if (!hand.IsTracked)
-				continue;
+				return;
 
-			for (int finger = 0; finger < 5; finger++) {
-			for (int joint  = 0; joint  < 5; joint++ ) {
-				HandJoint current = hand[finger, joint];
-				jointMesh.Draw(jointMaterial, Matrix.TRS(current.position, current.orientation, current.radius/2));
-			} }
+			for (int finger = 0; finger < 5; finger++)
+			{
+				for (int joint = 0; joint < 5; joint++)
+				{
+					HandJoint current = hand[finger, joint];
+					jointMesh.Draw(jointMaterial, Matrix.TRS(current.position, current.orientation, current.radius / 2));
+				}
+			}
 		}
-	}
 
-	/// :CodeDoc: Guides Using Hands
-	/// ## Pointers
-	/// 
-	/// And lastly, StereoKit also has a pointer system! This applies to
-	/// more than just hands. Head, mouse, and other devices will also
-	/// create pointers into the scene. You can filter pointers based on
-	/// source family and device capabilities, so this is a great way to 
-	/// abstract a few more input sources nicely!
-	public static void DrawPointers()
+		DrawHand(Input.Hand(Handed.Right));
+        DrawHand(Backend.OpenXR.HandsAtTime(Backend.OpenXR.Time - 1000000000).Left);
+    }
+
+    /// :CodeDoc: Guides Using Hands
+    /// ## Pointers
+    /// 
+    /// And lastly, StereoKit also has a pointer system! This applies to
+    /// more than just hands. Head, mouse, and other devices will also
+    /// create pointers into the scene. You can filter pointers based on
+    /// source family and device capabilities, so this is a great way to 
+    /// abstract a few more input sources nicely!
+    public static void DrawPointers()
 	{
 		int hands = Input.PointerCount(InputSource.Hand);
 		for (int i = 0; i < hands; i++)

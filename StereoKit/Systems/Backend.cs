@@ -59,6 +59,10 @@ namespace StereoKit
 			/// sample associated with the current value of <see cref="Input.Eyes"/>.</summary>
 			public static long EyesSampleTime => NativeAPI.backend_openxr_get_eyes_sample_time();
 
+			public static (Hand Left, Hand Right) HandsAtTime(long time) =>
+				(Marshal.PtrToStructure<Hand>(NativeAPI.backend_openxr_get_hand_at_time(Handed.Left, time)),
+				 Marshal.PtrToStructure<Hand>(NativeAPI.backend_openxr_get_hand_at_time(Handed.Right, time)));
+
 			/// <summary>This tells if an OpenXR extension has been requested
 			/// and successfully loaded by the runtime. This MUST only be
 			/// called after SK.Initialize.</summary>

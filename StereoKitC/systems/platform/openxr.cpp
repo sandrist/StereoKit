@@ -19,6 +19,7 @@
 #include "../audio.h"
 #include "../input.h"
 #include "../hand/input_hand.h"
+#include "../hand/hand_oxr_articulated.h"
 #include "android.h"
 #include "linux.h"
 #include "uwp.h"
@@ -68,6 +69,9 @@ pose_t xr_bounds_pose_local = pose_identity;
 
 XrDebugUtilsMessengerEXT xr_debug = {};
 XrReferenceSpaceType     xr_refspace;
+
+hand_t xr_hand_left  = {};
+hand_t xr_hand_right = {};
 
 ///////////////////////////////////////////
 
@@ -483,6 +487,9 @@ bool openxr_init() {
 	xr_time        = openxr_acquire_time();
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+
+	xr_hand_left.handedness = handed_left;
+	xr_hand_right.handedness = handed_right;
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	if (xr_ext_available.OCULUS_audio_device_guid) {
@@ -919,6 +926,17 @@ int64_t backend_openxr_get_eyes_sample_time() {
 	if (backend_xr_get_type() != backend_xr_type_openxr)
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 	return xr_eyes_sample_time;
+}
+
+///////////////////////////////////////////
+
+const hand_t *backend_openxr_get_hand_at_time(handed_ handedness, int64_t time) {
+	if (backend_xr_get_type() != backend_xr_type_openxr)
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	
+	hand_t *hand = handedness == handed_left ? &xr_hand_left : &xr_hand_right;
+	hand_oxra_get_pose_at_time(hand, time);
+	return hand;
 }
 
 ///////////////////////////////////////////

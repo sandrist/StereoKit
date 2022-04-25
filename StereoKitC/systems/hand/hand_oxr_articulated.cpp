@@ -243,6 +243,53 @@ void hand_oxra_update_joints() {
 
 ///////////////////////////////////////////
 
+void hand_oxra_get_pose_at_time(hand_t* hand, int64_t time) {
+	int32_t h = (int)hand->handedness;
+
+	XrHandJointsLocateInfoEXT locate_info = { XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT };
+	locate_info.time = time;
+	locate_info.baseSpace = xr_app_space;
+
+	XrHandJointLocationEXT  joint_locations[XR_HAND_JOINT_COUNT_EXT];
+	XrHandJointLocationsEXT locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
+	locations.isActive = XR_FALSE;
+	locations.jointCount = XR_HAND_JOINT_COUNT_EXT;
+	locations.jointLocations = joint_locations;
+	xr_extensions.xrLocateHandJointsEXT(oxra_hand_tracker[h], &locate_info, &locations);
+
+	// Update the tracking state of the hand
+	bool    valid_joints = (locations.jointLocations[0].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
+	hand->tracked_state = button_make_state(hand->tracked_state & button_state_active, valid_joints);
+
+	// No valid joints? Hand many not be visible, we can skip getting 
+	// pose information.
+	if (!valid_joints) {
+		return;
+	}
+
+	// Get joint poses from OpenXR
+	matrix root = render_get_cam_final();
+	quat   root_q = matrix_extract_rotation(root);
+	for (uint32_t j = 0; j < locations.jointCount; j++) {
+		memcpy(&oxra_hand_joints[h][j].position, &locations.jointLocations[j].pose.position, sizeof(vec3));
+		memcpy(&oxra_hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
+		oxra_hand_joints[h][j].radius = locations.jointLocations[j].radius;
+		oxra_hand_joints[h][j].position = matrix_transform_pt(root, oxra_hand_joints[h][j].position);
+		oxra_hand_joints[h][j].orientation = oxra_hand_joints[h][j].orientation * root_q;
+	}
+
+	// Copy the pose data into our hand
+	hand_joint_t* pose = &hand->fingers[0][0];
+	memcpy(&pose[1], &oxra_hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t) * 24);
+	memcpy(&pose[0], &oxra_hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t)); // Thumb metacarpal is duplicated at the same location
+
+	static const quat face_forward = quat_from_angles(-90, 0, 0);
+	hand->palm = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT].orientation };
+	hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position, oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
+}
+
+///////////////////////////////////////////
+
 void hand_oxra_update_inactive() {
 	oxra_mesh_dirty[0] = true;
 	oxra_mesh_dirty[1] = true;
