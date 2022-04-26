@@ -208,15 +208,15 @@ New-Item -Path . -Name 'Release_ARM' -ItemType 'directory' | Out-Null
 Push-Location -Path 'Release_ARM'
 & cmake -G $vsGeneratorName -A ARM -DCMAKE_BUILD_TYPE=Release ../ -Wno-dev
 & cmake --build . --config Release 
-Copy-Item -Path "Release/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/ARM_UWP/Release/" -Force -Confirm:$false
+Copy-Item -Path "Release/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/ARM/Release/" -Force -Confirm:$false
 Pop-Location
 
 New-Item -Path . -Name 'Debug_ARM' -ItemType 'directory' | Out-Null
 Push-Location -Path 'Debug_ARM'
 & cmake -G $vsGeneratorName -A ARM -DCMAKE_BUILD_TYPE=Debug ../ -Wno-dev
 & cmake --build .
-Copy-Item -Path "Debug/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/ARM_UWP/Debug/" -Force -Confirm:$false
-Copy-Item -Path "Debug/reactphysics3d.pdb" -Destination "../../../StereoKitC/lib/bin/ARM_UWP/Debug/" -Force -Confirm:$false
+Copy-Item -Path "Debug/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/ARM/Debug/" -Force -Confirm:$false
+Copy-Item -Path "Debug/reactphysics3d.pdb" -Destination "../../../StereoKitC/lib/bin/ARM/Debug/" -Force -Confirm:$false
 Pop-Location
 
 Pop-Location

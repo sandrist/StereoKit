@@ -70,7 +70,10 @@ function Get-Key {
 
 function Build-Sizes {
     $size_x64        = (Get-Item "bin/distribute/bin/Win32/x64/Release/StereoKitC.dll").length
+    $size_x64_linux  = (Get-Item "bin/distribute/bin/linux/x64/release/libStereoKitC.so").length
     $size_x64_uwp    = (Get-Item "bin/distribute/bin/UWP/x64/Release/StereoKitC.dll").length
+    $size_arm64      = (Get-Item "bin/distribute/bin/android/arm64-v8a/release/libStereoKitC.so").length
+    $size_arm64_linux= (Get-Item "bin/distribute/bin/linux/arm64/release/libStereoKitC.so").length
     $size_arm64_uwp  = (Get-Item "bin/distribute/bin/UWP/ARM64/Release/StereoKitC.dll").length
     $size_arm_uwp    = (Get-Item "bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll").length
 
@@ -83,10 +86,16 @@ function Build-Sizes {
 | UWP      | x64   | {2,8:N0} | {3,11:N0} |
 | UWP      | ARM64 | {4,8:N0} | {5,11:N0} |
 | UWP      | ARM   | {6,8:N0} | {7,11:N0} |
+| Linux    | x64   | {8,8:N0} | {9,11:N0} |
+| Linux    | ARM64 | {10,8:N0} | {11,11:N0} |
+| Android  | ARM64 | {12,8:N0} | {13,11:N0} |
 "@ -f ([math]::Round($size_x64        /1kb), $size_x64,
        [math]::Round($size_x64_uwp    /1kb), $size_x64_uwp,
        [math]::Round($size_arm64_uwp  /1kb), $size_arm64_uwp,
-       [math]::Round($size_arm_uwp    /1kb), $size_arm_uwp
+       [math]::Round($size_arm_uwp    /1kb), $size_arm_uwp,
+       [math]::Round($size_x64_linux  /1kb), $size_x64_linux,
+       [math]::Round($size_arm64_linux/1kb), $size_arm64_linux,
+       [math]::Round($size_arm64      /1kb), $size_arm64
        ))
 
     return $text
@@ -238,6 +247,86 @@ if ($fast -eq $false) {
 } else {
     Write-Host "`nSkipping tests for fast build!" -ForegroundColor yellow
 }
+
+#### Build Linux ##########################
+
+Write-Host @"
+
+  _    _              
+ | |  (_)_ _ _  ___ __
+ | |__| | ' \ || \ \ /
+ |____|_|_||_\_,_/_\_\
+                      
+"@ -ForegroundColor White
+
+# Platform specific shader compile for shaders bundled in the platform binary!
+Write-Host "--- Compiling shaders as Linux only ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'g' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+
+# Find the correct WSL folder
+$linux_folder = ''+$PSScriptRoot
+$linux_folder = $linux_folder.replace('\', '/')
+$linux_folder = $linux_folder.replace(':', '')
+$linux_folder = '/mnt/'+$linux_folder
+Write-Output $linux_folder
+
+# Linux, via WSL
+Write-Host '--- Beginning WSL build: Linux ARM64 ---' -ForegroundColor green
+if ($fast -eq $false) {
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake -r"
+} else {
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake"
+}
+if ($LASTEXITCODE -ne 0) {
+    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
+    exit
+}
+Write-Host '--- Finished building: Linux ARM64 ---' -ForegroundColor green
+
+
+Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
+if ($fast -eq $false) {
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake -r"
+} else {
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake"
+}
+if ($LASTEXITCODE -ne 0) {
+    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
+    exit
+}
+Write-Host '--- Finished building: Linux x64 ---' -ForegroundColor green
+
+#### Build Android ########################
+
+Write-Host @"
+
+    _           _         _    _ 
+   /_\  _ _  __| |_ _ ___(_)__| |
+  / _ \| ' \/ _' | '_/ _ \ / _' |
+ /_/ \_\_||_\__,_|_| \___/_\__,_|
+                      
+"@ -ForegroundColor White
+
+# Platform specific shader compile for shaders bundled in the platform binary!
+Write-Host "--- Compiling shaders as Android only ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'e' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+
+# Do cross platform build code first
+Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
+xmake f -p android -a arm64-v8a -m release -y --oculus-openxr=y
+if ($fast -eq $false) {
+    xmake -r
+} else {
+    xmake
+}
+if ($LASTEXITCODE -ne 0) {
+    Write-Host '--- Android build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
+    exit
+}
+Write-Host '--- Finished building: Android arm64-v8a ---' -ForegroundColor green
 
 #### Assemble NuGet Package ###############
 
