@@ -125,7 +125,7 @@
       <Version>6.2.9</Version>
     </PackageReference>
     <PackageReference Include="StereoKit">
-      <Version>0.3.6-preview.5</Version>
+      <Version>0.3.7-preview.5</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
@@ -137,7 +137,6 @@
     </Content>
     <SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
   </ItemGroup>
-  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
