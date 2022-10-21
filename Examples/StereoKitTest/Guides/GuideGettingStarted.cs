@@ -14,6 +14,10 @@
 /// - **Enable Developer Mode (for UWP/HoloLens)**
 ///   - Windows Settings->Update and Security->For Developers->Developer Mode
 /// 
+/// > **Native code developers** can check out [this guide]({{site.url}}/Pages/Guides/Getting-Started-Native.html) for using StereoKit from C/C++.
+/// >
+/// > **VS Code** developers can check out [this guide]({{site.url}}/Pages/Guides/Getting-Started-VS-Code.html) for some VS Code specific information.
+/// 
 /// This short video goes through the pre-requisites for building StereoKit's
 /// hello world! You can find a [UWP/HoloLens specific version here](https://www.youtube.com/watch?v=U_7VNIcPQaM)
 /// as well.
@@ -33,10 +37,8 @@
 ///   - .Net Core is for desktop XR on Windows and Linux. It is simple, compiles quickly, and is the best option for most developers.
 /// - **StereoKit UWP**
 ///   - UWP is for HoloLens 2, and can run on Windows desktop. UWP can be slower to compile, and is no longer receiving updates from the .Net team.
-/// - _[Cross Platform Template (in development)](https://github.com/maluoi/StereoKit/tree/master/StereoKitTemplates/StereoKitXPlat)_
+/// - _[Cross Platform/Universal Template (in development)](https://github.com/StereoKit/SKTemplate-Universal)_
 ///   - This is an early version still in project format. It works with .Net Core, UWP, and Xamarin(Android/Quest) all at once via a DLL shared between multiple platform specific projects.
-/// - _[Native C++ Template (in development)](https://github.com/maluoi/StereoKit/tree/master/StereoKitTemplates/SKNative)_
-///   - StereoKit does provide a C API, but experienced developers should only choose this if the benefits outweigh the lack of C API documentation.
 /// 
 /// For an overview of the initial code in the .Net Core and UWP templates,
 /// check out this video!
@@ -67,14 +69,14 @@ class Program
 /// ## Next Steps
 /// 
 /// Awesome! That's pretty great, but what next? [Why don't we build some UI]({{site.url}}/Pages/Guides/User-Interface.html)?
-/// Alternatively, you can check out the [StereoKit Ink](https://github.com/maluoi/StereoKit-PaintTutorial)
+/// Alternatively, you can check out the [StereoKit Ink](https://github.com/StereoKit/StereoKit-PaintTutorial)
 /// repository, which contains an XR ink-painting application written in about
 /// 220 lines of code! It's well commented, and is a good example to pick
 /// through.
 /// 
 /// For additional learning resources, you can check out the [Learning Resources]({{site.url}}/Pages/Guides/Learning-Resources.html)
 /// page for a couple of repositories and links that may help you out. In
-/// particular, the GitHub repository does contain a [number of small demo scenes](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
+/// particular, the GitHub repository does contain a [number of small demo scenes](https://github.com/StereoKit/StereoKit/tree/master/Examples/StereoKitTest/Demos)
 /// that are excellent reference for a number of different StereoKit features!
 /// 
 /// And don't forget to peek in the docs here! Most pages contain sample code

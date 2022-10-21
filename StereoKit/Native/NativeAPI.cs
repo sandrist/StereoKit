@@ -99,10 +99,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_keep_data   (IntPtr mesh, bool keep_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_get_keep_data   (IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_verts       (IntPtr mesh, [In] Vertex[] vertices, int vertex_count, bool calculate_bounds = true);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_get_verts       (IntPtr mesh, out IntPtr out_vertices, out int out_vertex_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_get_verts       (IntPtr mesh, out IntPtr out_vertices, out int out_vertex_count, Memory reference_mode);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    mesh_get_vert_count  (IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_inds        (IntPtr mesh, [In] uint[] indices, int index_count);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_get_inds        (IntPtr mesh, out IntPtr out_indices,  out int out_index_count); // [Out, MarshalAs(unmanagedType:UnmanagedType.LPArray, SizeParamIndex=2)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_get_inds        (IntPtr mesh, out IntPtr out_indices,  out int out_index_count, Memory reference_mode); // [Out, MarshalAs(unmanagedType:UnmanagedType.LPArray, SizeParamIndex=2)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    mesh_get_ind_count   (IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_draw_inds   (IntPtr mesh, int index_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_bounds      (IntPtr mesh, in Bounds bounds);
@@ -131,6 +131,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_files(string[] cube_face_file_xxyyzz, int srgb_data, IntPtr lighting_info, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_files(string[] cube_face_file_xxyyzz, int srgb_data, out SphericalHarmonics lighting_info, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_id              (IntPtr texture, string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_fallback        (IntPtr texture, IntPtr fallback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_release             (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_addref              (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AssetState tex_asset_state     (IntPtr texture);
@@ -142,6 +143,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] byte[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] ushort[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] float[] data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_surface         (IntPtr texture, IntPtr native_surface, TexType type, long native_fmt, int width, int height, int surface_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_add_zbuffer         (IntPtr texture, TexFormat format = TexFormat.DepthStencil);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data            (IntPtr texture, IntPtr out_data, UIntPtr out_data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_color           (Color color, int width, int height, TexType type, TexFormat format);
@@ -157,6 +159,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexAddress tex_get_address     (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_anisotropy  (IntPtr texture, int anisotropy_level = 4);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        tex_get_anisotropy  (IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_loading_fallback(IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_error_fallback  (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics tex_get_cubemap_lighting(IntPtr cubemap_texture);
 		///////////////////////////////////////////
 
@@ -307,12 +311,14 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_root           (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_name           (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_solid          (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_visible        (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_material       (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_mesh           (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_model(IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_local(IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_name           (IntPtr model, int node, string name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_solid          (IntPtr model, int node, int solid);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_visible        (IntPtr model, int node, int visible);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_material       (IntPtr model, int node, IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_mesh           (IntPtr model, int node, IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_transform_model(IntPtr model, int node, Matrix transform_model_space);
@@ -495,6 +501,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_java_vm ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_activity();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_jni_env ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendGraphics backend_graphics_get();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_d3d11_get_d3d_device();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_d3d11_get_d3d_context();
 
 		///////////////////////////////////////////
 
@@ -545,6 +554,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_last     ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_reserve  (Vec2 size, int add_padding = 0, float depth = 0);
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_hand_used(Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_active();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_focused();
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   ui_area_remaining();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_nextline      ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_sameline      ();
@@ -560,6 +573,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_volume_at_16      (string id, Bounds bounds);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern BtnState ui_interact_volume_at(Bounds bounds, out Handed out_hand);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_at_16      (string text, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_img_16     (string text, IntPtr image, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_round_at_16(string text, IntPtr image_sprite, Vec3 window_relative_pos, float diameter);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_toggle_at_16      (string text, ref int pressed, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void     ui_progress_bar_at   (float percent, Vec3 window_relative_pos, Vec2 size);
@@ -573,6 +587,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_image          (IntPtr sprite_image, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_16      (string text);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_sz_16   (string text, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_16   (string text, IntPtr image, UIBtnLayout image_layout);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_sz_16(string text, IntPtr image, UIBtnLayout image_layout, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_round_16(string id, IntPtr image, float diameter);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_16      (string text, ref int pressed);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_sz_16   (string text, ref int pressed, Vec2 size);

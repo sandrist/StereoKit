@@ -5,7 +5,7 @@
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
 #define SK_VERSION_PATCH 6
-#define SK_VERSION_PRERELEASE 5
+#define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
@@ -262,6 +262,21 @@ typedef enum asset_state_ {
 	  use!*/
 	asset_state_loaded,
 } asset_state_;
+
+/*For performance sensitive areas, or places dealing with large chunks of
+  memory, it can be faster to get a reference to that memory rather than
+  copying it! However, if this isn't explicitly stated, it isn't necessarily
+  clear what's happening. So this enum allows us to visibly specify what type
+  of memory reference is occurring.*/
+typedef enum memory_ {
+	/*The chunk of memory involved here is a reference that is still managed or
+	  used by StereoKit! You should _not_ free it, and be extremely cautious
+	  about modifying it.*/
+	memory_reference,
+	/*This memory is now _yours_ and you must free it yourself! Memory has been
+	  allocated, and the data has been copied over to it. Pricey! But safe.*/
+	memory_copy,
+} memory_;
 
 typedef struct sk_settings_t {
 	const char    *app_name;
@@ -640,10 +655,10 @@ SK_API void     mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t mesh_get_keep_data   (mesh_t mesh);
 SK_API void     mesh_set_data        (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
 SK_API void     mesh_set_verts       (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
-SK_API void     mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count);
+SK_API void     mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
 SK_API int32_t  mesh_get_vert_count  (mesh_t mesh);
 SK_API void     mesh_set_inds        (mesh_t mesh, const vind_t *indices, int32_t index_count);
-SK_API void     mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count);
+SK_API void     mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
 SK_API int32_t  mesh_get_ind_count   (mesh_t mesh);
 SK_API void     mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
 SK_API void     mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
@@ -705,52 +720,52 @@ typedef enum tex_format_ {
 	  the time you're dealing with color images! Matches well with the
 	  Color32 struct! If you're storing normals, rough/metal, or
 	  anything else, use Rgba32Linear.*/
-	tex_format_rgba32,
+	tex_format_rgba32 = 1,
 	/*Red/Green/Blue/Transparency data channels, at 8 bits
 	  per-channel in linear color space. This is what you'll want most
 	  of the time you're dealing with color data! Matches well with the
 	  Color32 struct.*/
-	tex_format_rgba32_linear,
-	tex_format_bgra32,
-	tex_format_bgra32_linear,
-	tex_format_rg11b10,
-	tex_format_rgb10a2,
+	tex_format_rgba32_linear = 2,
+	tex_format_bgra32 = 3,
+	tex_format_bgra32_linear = 4,
+	tex_format_rg11b10 = 5,
+	tex_format_rgb10a2 = 6,
 	/*Red/Green/Blue/Transparency data channels, at 16 bits
 	  per-channel! This is not common, but you might encounter it with
 	  raw photos, or HDR images.*/
-	tex_format_rgba64, // TODO: remove during major version update
-	tex_format_rgba64s,
-	tex_format_rgba64f,
+	tex_format_rgba64 = 7, // TODO: remove during major version update
+	tex_format_rgba64s = 8,
+	tex_format_rgba64f = 9,
 	/*Red/Green/Blue/Transparency data channels at 32 bits
 	  per-channel! Basically 4 floats per color, which is bonkers
 	  expensive. Don't use this unless you know -exactly- what you're
 	  doing.*/
-	tex_format_rgba128,
+	tex_format_rgba128 = 10,
 	/*A single channel of data, with 8 bits per-pixel! This
 	  can be great when you're only using one channel, and want to
 	  reduce memory usage. Values in the shader are always 0.0-1.0.*/
-	tex_format_r8,
+	tex_format_r8 = 11,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
 	  information in it. Values in the shader are always 0.0-1.0.*/
-	tex_format_r16,
+	tex_format_r16 = 12,
 	/*A single channel of data, with 32 bits per-pixel! This
 	  basically treats each pixel as a generic float, so you can do all
 	  sorts of strange and interesting things with this.*/
-	tex_format_r32,
+	tex_format_r32 = 13,
 	/*A depth data format, 24 bits for depth data, and 8 bits
 	  to store stencil information! Stencil data can be used for things
 	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depthstencil,
+	tex_format_depthstencil = 14,
 	/*32 bits of data per depth value! This is pretty detailed,
 	  and is excellent for experiences that have a very far view
 	  distance.*/
-	tex_format_depth32,
+	tex_format_depth32 = 15,
 	/*16 bits of depth is not a lot, but it can be enough if
 	  your far clipping plane is pretty close. If you're seeing lots of
 	  flickering where two objects overlap, you either need to bring
 	  your far clip in, or switch to 32/24 bit depth.*/
-	tex_format_depth16,
+	tex_format_depth16 = 16,
 
 	tex_format_rgba64u = tex_format_rgba64,
 } tex_format_;
@@ -803,6 +818,7 @@ SK_API tex_t        tex_create_file_arr     (const char **files, int32_t file_co
 SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,       bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
 SK_API void         tex_set_id              (tex_t texture, const char *id);
+SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
@@ -825,6 +841,8 @@ SK_API void         tex_set_address         (tex_t texture, tex_address_ address
 SK_API tex_address_ tex_get_address         (tex_t texture);
 SK_API void         tex_set_anisotropy      (tex_t texture, int32_t anisotropy_level sk_default(4));
 SK_API int32_t      tex_get_anisotropy      (tex_t texture);
+SK_API void         tex_set_loading_fallback(tex_t loading_texture);
+SK_API void         tex_set_error_fallback  (tex_t error_texture);
 SK_API spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture);
 
 ///////////////////////////////////////////
@@ -1231,12 +1249,14 @@ SK_API model_node_id model_node_iterate            (model_t model, model_node_id
 SK_API model_node_id model_node_get_root           (model_t model);
 SK_API const char*   model_node_get_name           (model_t model, model_node_id node);
 SK_API bool32_t      model_node_get_solid          (model_t model, model_node_id node);
+SK_API bool32_t      model_node_get_visible        (model_t model, model_node_id node);
 SK_API material_t    model_node_get_material       (model_t model, model_node_id node);
 SK_API mesh_t        model_node_get_mesh           (model_t model, model_node_id node);
 SK_API matrix        model_node_get_transform_model(model_t model, model_node_id node);
 SK_API matrix        model_node_get_transform_local(model_t model, model_node_id node);
 SK_API void          model_node_set_name           (model_t model, model_node_id node, const char* name);
 SK_API void          model_node_set_solid          (model_t model, model_node_id node, bool32_t    solid);
+SK_API void          model_node_set_visible        (model_t model, model_node_id node, bool32_t    visible);
 SK_API void          model_node_set_material       (model_t model, model_node_id node, material_t  material);
 SK_API void          model_node_set_mesh           (model_t model, model_node_id node, mesh_t      mesh);
 SK_API void          model_node_set_transform_model(model_t model, model_node_id node, matrix      transform_model_space);
@@ -1582,6 +1602,8 @@ typedef struct mouse_t {
 /*A collection of system key codes, representing keyboard
   characters and mouse buttons. Based on VK codes.*/
 typedef enum key_ {
+	/*Doesn't represent a key, generally means this item has not been set to
+	  any particular value!*/
 	key_none      = 0x00,
 	/*Left mouse button.*/
 	key_mouse_left = 0x01,
@@ -1890,6 +1912,15 @@ typedef enum backend_platform_ {
 	backend_platform_web,
 } backend_platform_;
 
+/*This describes the graphics API thatStereoKit is using for rendering.*/
+typedef enum backend_graphics_ {
+	/*An invalid default value. Right now, this may likely indicate a variety
+	  of OpenGL.*/
+	backend_graphics_none,
+	/*DirectX's Direct3D11 is used for rendering!*/
+	backend_graphics_d3d11,
+} backend_graphics_;
+
 typedef uint64_t openxr_handle_t;
 
 SK_API backend_xr_type_  backend_xr_get_type        ();
@@ -1902,10 +1933,15 @@ SK_API void             *backend_openxr_get_function(const char *function_name);
 SK_API bool32_t          backend_openxr_ext_enabled (const char *extension_name);
 SK_API void              backend_openxr_ext_request (const char *extension_name);
 SK_API void              backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
-SK_API backend_platform_ backend_platform_get        ();
-SK_API void             *backend_android_get_java_vm ();
-SK_API void             *backend_android_get_activity();
-SK_API void             *backend_android_get_jni_env ();
+
+SK_API backend_platform_ backend_platform_get         ();
+SK_API void             *backend_android_get_java_vm  ();
+SK_API void             *backend_android_get_activity ();
+SK_API void             *backend_android_get_jni_env  ();
+
+SK_API backend_graphics_ backend_graphics_get         ();
+SK_API void             *backend_d3d11_get_d3d_device ();
+SK_API void             *backend_d3d11_get_d3d_context();
 
 ///////////////////////////////////////////
 
@@ -1961,6 +1997,8 @@ SK_CONST char *default_id_tex_black            = "default/tex_black";
 SK_CONST char *default_id_tex_gray             = "default/tex_gray";
 SK_CONST char *default_id_tex_flat             = "default/tex_flat";
 SK_CONST char *default_id_tex_rough            = "default/tex_rough";
+SK_CONST char *default_id_tex_devtex           = "default/tex_devtex";
+SK_CONST char *default_id_tex_error            = "default/tex_error";
 SK_CONST char *default_id_cubemap              = "default/cubemap";
 SK_CONST char *default_id_font                 = "default/font";
 SK_CONST char *default_id_mesh_quad            = "default/mesh_quad";
@@ -1971,6 +2009,7 @@ SK_CONST char *default_id_mesh_lefthand        = "default/mesh_lefthand";
 SK_CONST char *default_id_mesh_righthand       = "default/mesh_righthand";
 SK_CONST char *default_id_mesh_ui_button       = "default/mesh_ui_button";
 SK_CONST char *default_id_shader               = "default/shader";
+SK_CONST char *default_id_shader_blit          = "default/shader_blit";
 SK_CONST char *default_id_shader_pbr           = "default/shader_pbr";
 SK_CONST char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
 SK_CONST char *default_id_shader_unlit         = "default/shader_unlit";
@@ -1999,9 +2038,9 @@ SK_CONST char *default_id_sound_ungrab         = "default/sound_ungrab";
 
   // This will look like 'M.i.P-rcr', or 'M.i.P' if r is 0
 #if SK_VERSION_PRERELEASE != 0
-#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-preview" SK_STR(SK_VERSION_PRERELEASE))
+#define SK_VERSION SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-preview." SK_STR(SK_VERSION_PRERELEASE)
 #else
-#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH))
+#define SK_VERSION SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH)
 #endif
 
   // A version in hex looks like: 0xMMMMiiiiPPPPrrrr

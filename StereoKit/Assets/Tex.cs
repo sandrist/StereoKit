@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace StereoKit
 {
@@ -21,18 +20,30 @@ namespace StereoKit
 		/// Id.</summary>
 		public string Id { set => NativeAPI.tex_set_id(_inst, value); }
 
-		/// <summary> The width of the texture, in pixels. </summary>
+		/// <summary> The width of the texture, in pixels. This will be a
+		/// blocking call if AssetState is less than LoadedMeta. </summary>
 		public int Width => NativeAPI.tex_get_width(_inst);
-		/// <summary> The height of the texture, in pixels. </summary>
+		/// <summary> The height of the texture, in pixels. This will be a
+		/// blocking call if AssetState is less than LoadedMeta. </summary>
 		public int Height => NativeAPI.tex_get_height(_inst);
 		/// <summary> The StereoKit format this texture was initialized with.
+		/// This will be a blocking call if AssetState is less than LoadedMeta.
 		/// </summary>
 		public TexFormat Format => NativeAPI.tex_get_format(_inst);
 
+		/// <summary> Textures are loaded asyncronously, so this tells you the
+		/// current state of this texture! This also can tell if an error
+		/// occured, and what type of error it may have been. </summary>
 		public AssetState AssetState => NativeAPI.tex_asset_state(_inst);
 
+		/// <summary> This will override the default fallback texutre that gets
+		/// used before the Tex has finished loading. This is useful for
+		/// textures with a specific purpose where the normal fallback texture
+		/// would appear strange, such as a metal/rough map. </summary>
+		public Tex FallbackOverride { set { NativeAPI.tex_set_fallback(_inst, value._inst); } }
+
 		/// <summary>This event gets called</summary>
-		public event Action<Tex> OnLoaded { 
+		public event Action<Tex> OnLoaded {
 			add {
 				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
 
@@ -151,7 +162,7 @@ namespace StereoKit
 		{
 			TexFormat format = Format;
 			if (format != TexFormat.Rgba32 && format != TexFormat.Rgba32Linear)
-			{ 
+			{
 				Log.Err($"Can't set a {format} format texture from Color32 data!");
 				return;
 			}
@@ -242,6 +253,9 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 
+		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1)
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count);
+
 		public void GetColors(ref Color32[] colorData)
 		{
 			if (colorData == null)
@@ -275,6 +289,23 @@ namespace StereoKit
 
 		#region Static Methods
 
+		/// <summary>This is the texture that all Tex objects will fall back to
+		/// by default if they are still loading. Assigning a texture here that
+		/// isn't fully loaded will cause the app to block until it is loaded.
+		/// </summary>
+		/// <param name="loadingTexture">Any _valid_ texture here is fine.
+		/// Preferably loaded already, but doesn't have to be.</param>
+		public static void SetLoadingFallback(Tex loadingTexture)
+			=> NativeAPI.tex_set_loading_fallback(loadingTexture._inst);
+
+		/// <summary>This is the texture that all Tex objects with errors will
+		/// fall back to. Assigning a texture here that isn't fully loaded will
+		/// cause the app to block until it is loaded. </summary>
+		/// <param name="errorTexture">Any _valid_ texture here is fine.
+		/// Preferably loaded already, but doesn't have to be.</param>
+		public static void SetErrorFallback(Tex errorTexture)
+			=> NativeAPI.tex_set_error_fallback(errorTexture._inst);
+
 		/// <summary>Finds a texture that matches the given Id! Check out the
 		/// DefaultIds static class for some built-in ids.</summary>
 		/// <param name="id">Id of the texture asset.</param>
@@ -304,7 +335,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(Encoding.UTF8.GetBytes(equirectangularCubemap+'\0'), sRGBData?1:0, IntPtr.Zero, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData?1:0, IntPtr.Zero, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -329,7 +360,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(Encoding.UTF8.GetBytes(equirectangularCubemap+'\0'), sRGBData?1:0, out lightingInfo, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData?1:0, out lightingInfo, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -351,7 +382,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromFile(string file, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file(Encoding.UTF8.GetBytes(file+'\0'), sRGBData?1:0, 10);
+			IntPtr inst = NativeAPI.tex_create_file(NativeHelper.ToUtf8(file), sRGBData?1:0, 10);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -603,6 +634,10 @@ namespace StereoKit
 		public static Tex Gray => Default.TexGray;
 		/// <inheritdoc cref="Default.TexRough" />
 		public static Tex Rough => Default.TexRough;
+		/// <inheritdoc cref="Default.TexDevTex" />
+		public static Tex DevTex => Default.TexDevTex;
+		/// <inheritdoc cref="Default.TexError" />
+		public static Tex Error => Default.TexError;
 		#endregion
 	}
 }

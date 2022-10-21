@@ -2,6 +2,7 @@
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
+#include "openxr_extensions.h"
 #include "openxr_input.h"
 
 #include "../../stereokit.h"
@@ -14,7 +15,6 @@
 #include "../../libraries/sokol_time.h"
 #include "../system.h"
 
-#include <openxr/openxr.h>
 #include <stdio.h>
 
 namespace sk {
@@ -86,8 +86,8 @@ void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_
 
 	int64_t id = xr_compositor_layer_sort.binary_search(sort_order);
 	if (id < 0) id = ~id;
-	xr_compositor_layer_sort.insert(id, sort_order);
-	xr_compositor_layers    .insert(id, start);
+	xr_compositor_layer_sort.insert((size_t)id, sort_order);
+	xr_compositor_layers    .insert((size_t)id, start);
 }
 
 ///////////////////////////////////////////
@@ -440,7 +440,7 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear) };
 
 	int64_t depth_formats[] = {
-		skg_tex_fmt_to_native(render_preferred_depth_fmt()),
+		skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt()),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth32),
 		skg_tex_fmt_to_native(skg_tex_fmt_depthstencil)};

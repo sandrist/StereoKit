@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-/// :CodeDoc: Guides 3 Using The Simulator
+/// :CodeDoc: Guides 5 Using The Simulator
 /// # Using the Simulator
 /// 
 /// As a developer, you can't realistically spend all of your development in
@@ -25,6 +25,7 @@
 /// - Scroll Wheel - Moves the hand toward or away from the user.
 /// - Shift + Right - Mouse-look / rotate the head.
 /// - Left Alt - [Eye tracking](({{site.url}}/Pages/Reference/Input/Eyes.html) will point along the ray indicated by the mouse.
+/// - Ctrl + Shift - Switch between controlling left hand, right hand, or no hand.
 /// 
 /// To move around in space, you'll find controls that should be familiar to
 /// those that play first-person games! Hold Left Shift to enable this.
@@ -75,7 +76,7 @@ class GuideUsingTheSimulator : ITest
 		/// 
 		/// A number of functions are present that can make unit test and
 		/// complex input simulation possible. For a full example of this,
-		/// the [DebugToolWindow](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DebugToolWindow.cs)
+		/// the [DebugToolWindow](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/DebugToolWindow.cs)
 		/// in the Test project has a number of sample utilities for
 		/// recording and playing back input.
 		/// 

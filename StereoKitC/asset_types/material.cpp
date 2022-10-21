@@ -126,6 +126,8 @@ material_t material_create(shader_t shader) {
 ///////////////////////////////////////////
 
 material_t material_copy(material_t material) {
+	if (material == nullptr) return nullptr;
+
 	// Make a new empty material
 	material_t result = material_create(material->shader);
 	// release any of the default textures for the material.
@@ -727,7 +729,7 @@ void material_check_tex_changes(material_t material) {
 	// Textures that progressively load or swap from fallbacks will change
 	// their dimensions. SK provides dimensions via the texname_i variable, so
 	// we're making sure that stays in sync here.
-	for (size_t i = 0; i < material->args.texture_count; i++) {
+	for (int32_t i = 0; i < material->args.texture_count; i++) {
 		shaderargs_tex_t *curr = &material->args.textures[i];
 		if (curr->meta_hash != curr->tex->meta_hash) {
 			tex_t physical_tex = curr->tex->fallback == nullptr

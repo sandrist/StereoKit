@@ -1,10 +1,9 @@
 #include "render.h"
-#include "render_sort.h"
 #include "world.h"
 #include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
-#include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
 #include "../stereokit.h"
@@ -28,18 +27,28 @@
 #include "../libraries/stb_image_write.h"
 #pragma warning(pop)
 
-// Matrix math functions and objects
-#if defined(SK_OS_LINUX)
-// Different include path on Linux to hint clangd where the file actually is
-#include "../lib/include_no_win/DirectXMath.h" 
-#else
-#include <DirectXMath.h>
-#endif
 using namespace DirectX;
 
 namespace sk {
 
 ///////////////////////////////////////////
+
+struct render_item_t {
+	XMMATRIX    transform;
+	color128    color;
+	uint64_t    sort_id;
+	skg_mesh_t *mesh;
+	material_t  material;
+	int32_t     mesh_inds;
+	uint16_t    layer;
+};
+
+struct _render_list_t {
+	array_t<render_item_t> queue;
+	render_stats_t         stats;
+	render_list_state_     state;
+	bool                   prepped;
+};
 
 struct render_transform_buffer_t {
 	XMMATRIX world;
@@ -146,6 +155,11 @@ void          render_check_screenshots();
 void          render_check_viewpoints ();
 
 void          render_list_prep        (render_list_t list);
+void          render_list_add         (const render_item_t *item);
+void          render_list_add_to      (render_list_t list, const render_item_t *item);
+
+void          radix_sort7             (render_item_t *a, size_t count);
+void          radix_sort_clean        ();
 
 ///////////////////////////////////////////
 
@@ -253,20 +267,20 @@ const char *render_fmt_name(tex_format_ format) {
 
 ///////////////////////////////////////////
 
-skg_tex_fmt_ render_preferred_depth_fmt() {
+tex_format_ render_preferred_depth_fmt() {
 	depth_mode_ mode = sk_get_settings().depth_mode;
 	switch (mode) {
 	case depth_mode_balanced:
 #if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_ANDROID)
-		return skg_tex_fmt_depth16;
+		return tex_format_depth16;
 #else
-		return skg_tex_fmt_depth32;
+		return tex_format_depth32;
 #endif
 		break;
-	case depth_mode_d16:     return skg_tex_fmt_depth16;
-	case depth_mode_d32:     return skg_tex_fmt_depth32;
-	case depth_mode_stencil: return skg_tex_fmt_depthstencil;
-	default: return skg_tex_fmt_depth16;
+	case depth_mode_d16:     return tex_format_depth16;
+	case depth_mode_d32:     return tex_format_depth32;
+	case depth_mode_stencil: return tex_format_depthstencil;
+	default: return tex_format_depth16;
 	}
 }
 
@@ -465,14 +479,17 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 
 	anim_update_model(model);
 	for (size_t i = 0; i < model->visuals.count; i++) {
+		const model_visual_t *vis = &model->visuals[i];
+		if (vis->visible == false) continue;
+		
 		render_item_t item;
-		item.mesh     = &model->visuals[i].mesh->gpu_mesh;
-		item.mesh_inds= model->visuals[i].mesh->ind_count;
-		item.material = model->visuals[i].material;
+		item.mesh     = &vis->mesh->gpu_mesh;
+		item.mesh_inds= vis->mesh->ind_count;
+		item.material = vis->material;
 		item.color    = color;
-		item.sort_id  = render_queue_id(item.material, model->visuals[i].mesh);
+		item.sort_id  = render_queue_id(item.material, vis->mesh);
 		item.layer    = (uint16_t)layer;
-		matrix_mul(model->visuals[i].transform_model, root, item.transform);
+		matrix_mul(vis->transform_model, root, item.transform);
 		render_list_add(&item);
 	}
 
@@ -833,7 +850,7 @@ void render_set_material(material_t material) {
 	if (material == render_last_material)
 		return;
 	render_last_material = material;
-	render_lists[render_list_active].stats.swaps_material++;
+	render_lists[(size_t)render_list_active].stats.swaps_material++;
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
@@ -926,16 +943,16 @@ render_list_t render_list_create() {
 ///////////////////////////////////////////
 
 void render_list_release(render_list_t list) {
-	render_lists[list].queue.free();
-	render_lists[list] = {};
-	render_lists[list].state = render_list_state_destroyed;
+	render_lists[(size_t)list].queue.free();
+	render_lists[(size_t)list] = {};
+	render_lists[(size_t)list].state = render_list_state_destroyed;
 }
 
 ///////////////////////////////////////////
 
 void render_list_push(render_list_t list) {
 	render_list_active = render_list_stack.add(list);
-	render_lists[list].state = render_list_state_used;
+	render_lists[(size_t)list].state = render_list_state_used;
 }
 
 ///////////////////////////////////////////
@@ -948,13 +965,13 @@ void render_list_pop() {
 ///////////////////////////////////////////
 
 void render_list_add(const render_item_t *item) {
-	render_lists[render_list_active].queue.add(*item);
+	render_lists[(size_t)render_list_active].queue.add(*item);
 }
 
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
-	render_lists[list].queue.add(*item);
+	render_lists[(size_t)list].queue.add(*item);
 }
 
 ///////////////////////////////////////////
@@ -980,7 +997,7 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 ///////////////////////////////////////////
 
 void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count) {
-	_render_list_t *list = &render_lists[list_id];
+	_render_list_t *list = &render_lists[(size_t)list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1026,7 +1043,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 ///////////////////////////////////////////
 
 void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, material_t override_material) {
-	_render_list_t *list = &render_lists[list_id];
+	_render_list_t *list = &render_lists[(size_t)list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1075,7 +1092,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 ///////////////////////////////////////////
 
 void render_list_prep(render_list_t list_id) {
-	_render_list_t *list = &render_lists[list_id];
+	_render_list_t *list = &render_lists[(size_t)list_id];
 	if (list->prepped) return;
 
 	// Sort the render queue
@@ -1095,10 +1112,127 @@ void render_list_prep(render_list_t list_id) {
 ///////////////////////////////////////////
 
 void render_list_clear(render_list_t list) {
-	render_lists[list].queue.clear();
-	render_lists[list].stats   = {};
-	render_lists[list].prepped = false;
-	render_lists[list].state   = render_list_state_empty;
+	render_lists[(size_t)list].queue.clear();
+	render_lists[(size_t)list].stats   = {};
+	render_lists[(size_t)list].prepped = false;
+	render_lists[(size_t)list].state   = render_list_state_empty;
+}
+
+///////////////////////////////////////////
+// Radix render sorting!                 //
+///////////////////////////////////////////
+
+// https://travisdowns.github.io/blog/2019/05/22/sorting.html
+
+#if _WIN32
+#include <intrin.h>
+#endif
+
+const size_t   RADIX_BITS   = 8;
+const size_t   RADIX_SIZE   = (size_t)1 << RADIX_BITS;
+const size_t   RADIX_LEVELS = (63 / RADIX_BITS) + 1;
+const uint64_t RADIX_MASK   = RADIX_SIZE - 1;
+
+using freq_array_type = size_t [RADIX_LEVELS][RADIX_SIZE];
+
+// Since this sort is specifically for the render queue, we'll reserve a
+// chunk of memory that sticks around, and resizes if it's too small.
+render_item_t *radix_queue_area = nullptr;
+size_t         radix_queue_size = 0;
+
+void radix_sort_clean() {
+	free(radix_queue_area);
+	radix_queue_area = nullptr;
+	radix_queue_size = 0;
+}
+
+// never inline just to make it show up easily in profiles (inlining this lengthly function doesn't
+// really help anyways)
+static void count_frequency(render_item_t *a, size_t count, freq_array_type freqs) {
+	for (size_t i = 0; i < count; i++) {
+		uint64_t value = a[i].sort_id;
+		for (size_t pass = 0; pass < RADIX_LEVELS; pass++) {
+			freqs[pass][value & RADIX_MASK]++;
+			value >>= RADIX_BITS;
+		}
+	}
+}
+
+/**
+* Determine if the frequencies for a given level are "trivial".
+* 
+* Frequencies are trivial if only a single frequency has non-zero
+* occurrences. In that case, the radix step just acts as a copy so we can
+* skip it.
+*/
+static bool is_trivial(size_t freqs[RADIX_SIZE], size_t count) {
+	for (size_t i = 0; i < RADIX_SIZE; i++) {
+		size_t freq = freqs[i];
+		if (freq != 0) {
+			return freq == count;
+		}
+	}
+	assert(count == 0); // we only get here if count was zero
+	return true;
+}
+
+void radix_sort7(render_item_t *a, size_t count) {
+	// Resize up if needed
+	if (radix_queue_size < count) {
+		free(radix_queue_area);
+		radix_queue_area = sk_malloc_t(render_item_t, count);
+		radix_queue_size = count;
+	}
+	freq_array_type freqs = {};
+	count_frequency(a, count, freqs);
+
+	render_item_t *from = a, *to = radix_queue_area;
+
+	for (size_t pass = 0; pass < RADIX_LEVELS; pass++) {
+
+		if (is_trivial(freqs[pass], count)) {
+			// this pass would do nothing, just skip it
+			continue;
+		}
+
+		uint64_t shift = pass * RADIX_BITS;
+
+		// array of pointers to the current position in each queue, which we set up based on the
+		// known final sizes of each queue (i.e., "tighly packed")
+		render_item_t *queue_ptrs[RADIX_SIZE], *next = to;
+		for (size_t i = 0; i < RADIX_SIZE; i++) {
+			queue_ptrs[i] = next;
+			next += freqs[pass][i];
+		}
+
+		// copy each element into the appropriate queue based on the current RADIX_BITS sized
+		// "digit" within it
+		for (size_t i = 0; i < count; i++) {
+			render_item_t value = from[i];
+			size_t        index = (value.sort_id >> shift) & RADIX_MASK;
+			*queue_ptrs[index]++ = value;
+#ifdef _WIN32
+#if defined(_M_ARM) || defined(_M_ARM64)
+			__prefetch (queue_ptrs[index] + 1);
+#elif !defined(WINDOWS_UWP)
+			_m_prefetch(queue_ptrs[index] + 1);
+#endif
+#else
+			__builtin_prefetch(queue_ptrs[index] + 1);
+#endif
+		}
+
+		// swap from and to areas
+		render_item_t *tmp = to;
+		to   = from;
+		from = tmp;
+	}
+
+	// because of the last swap, the "from" area has the sorted payload: if it's
+	// not the original array "a", do a final copy
+	if (from != a) {
+		memcpy(a, from, count*sizeof(render_item_t));
+	}
 }
 
 } // namespace sk

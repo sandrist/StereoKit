@@ -15,6 +15,7 @@
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../libraries/tinycthread.h"
+#include "../libraries/sokol_time.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -268,7 +269,7 @@ void  assets_shutdown_check() {
 			case asset_type_font:     type_name = "font_t";     break;
 			case asset_type_sprite:   type_name = "sprite_t";   break;
 			case asset_type_sound:    type_name = "sound_t";    break;
-			// note: asset_type_solid is unimplemented 
+			case asset_type_solid:    type_name = "solid_t";    break;
 			default: break;
 			}
 			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
@@ -388,8 +389,17 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 		mtx_unlock(&assets_job_lock);
 
 		// Block until the GPU thread has had a chance to take care of the job.
+		uint64_t start      = stm_now();
+		bool     has_warned = false;
 		while (job->finished == false) {
 			thrd_yield();
+
+			// if the app hasn't started stepping yet and this takes too long,
+			// the application may be off the gpu thread unintentionally.
+			if (sk_first_step == false && has_warned == false && stm_ms(stm_since(start)) > 4000) {
+				log_warn("A GPU asset is blocking its thread until the main thread is available, has async code accidentally shifted execution to a different thread since SK.Initialize?");
+				has_warned = true;
+			}
 		}
 
 		bool32_t result = job->success;
@@ -428,9 +438,24 @@ void assets_add_task(asset_task_t src_task) {
 	assets_addref(*task->asset);
 
 	mtx_lock(&asset_thread_task_mtx);
-	int64_t idx = asset_thread_tasks.binary_search(&asset_task_t::sort, task->sort);
+
+	// This array_t function has some strange behavior on 32 bit builds related
+	// to render sort items. We're duplicating it here without templating to
+	// avoid the issue for now.
+	int64_t idx = -1;
+	int64_t l = 0, r = asset_thread_tasks.count - 1;
+	while (l <= r) {
+		int64_t mid     = (l + r) / 2;
+		int64_t mid_val = asset_thread_tasks[(size_t)mid]->sort;
+		if      (mid_val < task->sort) l = mid + 1;
+		else if (mid_val > task->sort) r = mid - 1;
+		else { idx = mid; break; };
+	}
+	if (idx == -1)
+		idx = r < 0 ? r : -(r + 2);
+
 	if (idx < 0) idx = ~idx;
-	asset_thread_tasks.insert(idx, task);
+	asset_thread_tasks.insert((size_t)idx, task);
 	mtx_unlock(&asset_thread_task_mtx);
 }
 

@@ -10,6 +10,7 @@
 #include "../libraries/isac_spatial_sound.h"
 
 #include <string.h>
+#include <assert.h>
 
 namespace sk {
 
@@ -25,10 +26,6 @@ ma_device         au_mic_device     = {};
 sound_t           au_mic_sound      = {};
 char             *au_mic_name       = nullptr;
 bool              au_recording      = false;
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-IsacAdapter*      isac_adapter      = nullptr;
-#endif
-
 
 ///////////////////////////////////////////
 
@@ -354,8 +351,7 @@ bool audio_init() {
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	if (au_default_device_out_id.wasapi[0] == '\0') {
-		isac_adapter = new IsacAdapter(_countof(au_active_sounds));
-		HRESULT hr = isac_adapter->Activate(isac_data_callback);
+		HRESULT hr = isac_activate(_countof(au_active_sounds), isac_data_callback);
 
 		if (SUCCEEDED(hr)) {
 			log_info("Using audio backend: ISAC");
@@ -365,8 +361,6 @@ bool audio_init() {
 		} else {
 			log_warnf("ISAC audio backend failed 0x%X, falling back to miniaudio!", hr);
 		}
-		delete isac_adapter;
-		isac_adapter = nullptr;
 	}
 #endif
 
@@ -387,8 +381,20 @@ bool audio_init() {
 
 	ma_result result = ma_device_init(&au_context, &au_config, &au_device);
 	if (result != MA_SUCCESS) {
-		log_errf("Failed to open audio playback device, '%s'.", ma_result_description(result));
-		return false;
+		log_warnf("Failed to open audio playback device, '%s'.", ma_result_description(result));
+		
+		// Make a desperate attempt to fall back to a null device.
+		ma_backend backend = ma_backend_null;
+		if (ma_context_init(&backend, 1, nullptr, &au_context) != MA_SUCCESS) {
+			return false;
+		}
+		result = ma_device_init(&au_context, &au_config, &au_device);
+		
+		// Even the null device failed, so let's stop.
+		if (result != MA_SUCCESS) {
+			log_errf("Failed to open null audio playback device, '%s'.", ma_result_description(result));
+			return false;
+		}
 	}
 
 	result = ma_device_start(&au_device);
@@ -416,8 +422,7 @@ void audio_update() {
 void audio_shutdown() {
 	mic_stop();
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	if (isac_adapter)
-		delete isac_adapter;
+	isac_destroy();
 #endif
 	ma_device_uninit (&au_device);
 	ma_context_uninit(&au_context);

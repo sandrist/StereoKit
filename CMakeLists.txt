@@ -99,6 +99,7 @@ CPMAddPackage(
 ###########################################
 
 set(SK_SRC_SHADERS_HLSL
+  StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
   StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
   StereoKitC/shaders_builtin/shader_builtin_font.hlsl
@@ -122,7 +123,7 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   if (WIN32)
     add_custom_command(
         OUTPUT ${CMAKE_SOURCE_DIR}/${SHADER}.h
-        COMMAND ${SK_SHADER_COMPILER} -h -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin ${CMAKE_SOURCE_DIR}/${SHADER}
+        COMMAND ${SK_SHADER_COMPILER} -h -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
         DEPENDS ${SHADER} )
   endif()
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
@@ -185,6 +186,7 @@ set(SK_SRC_CODE
   StereoKitC/rect_atlas.h
   StereoKitC/rect_atlas.cpp
   StereoKitC/sk_math.h
+  StereoKitC/sk_math_dx.h
   StereoKitC/sk_math.cpp
   StereoKitC/sk_memory.h
   StereoKitC/sk_memory.cpp
@@ -260,8 +262,6 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/physics.cpp
   StereoKitC/systems/render.h
   StereoKitC/systems/render.cpp
-  StereoKitC/systems/render_sort.h
-  StereoKitC/systems/render_sort.cpp
   StereoKitC/systems/sprite_drawer.h
   StereoKitC/systems/sprite_drawer.cpp
   StereoKitC/systems/system.h
@@ -368,7 +368,6 @@ target_include_directories(StereoKitC
 target_link_libraries( StereoKitC
   PRIVATE
     ${PHYSICS_LIB}
-  PUBLIC
     openxr_loader
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
@@ -388,6 +387,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_basics.h
     Examples/StereoKitCTest/demo_basics.cpp
+    Examples/StereoKitCTest/demo_desktop.h
+    Examples/StereoKitCTest/demo_desktop.cpp
     Examples/StereoKitCTest/demo_picker.h
     Examples/StereoKitCTest/demo_picker.cpp
     Examples/StereoKitCTest/demo_mic.h
@@ -402,6 +403,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_ui_layout.cpp
     Examples/StereoKitCTest/demo_world.h
     Examples/StereoKitCTest/demo_world.cpp
+    Examples/StereoKitCTest/demo_windows.h
+    Examples/StereoKitCTest/demo_windows.cpp
     Examples/StereoKitCTest/demo_lines.h
     Examples/StereoKitCTest/demo_lines.cpp
     Examples/StereoKitCTest/demo_lighting.h
@@ -429,6 +432,7 @@ endif()
 # default, this is mostly for when using Visual Studio as
 # the IDE. CLI users can pass in command line arguments.
 if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
+  add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
   if(SK_PHYSICS)
     target_compile_options(reactphysics3d PRIVATE "/MP")
   endif()
